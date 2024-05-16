@@ -4,13 +4,15 @@ import multiprocessing
 import socket
 import time
 
+from main import Config
+
 # Define the port knock sequence
-KNOCK_SEQUENCE = [7000, 8000, 9000]
+# KNOCK_SEQUENCE = [7000, 8000, 9000]
 
 # Dictionary to store knock sequences for each IP address
 knock_sequences = {}
 
-def worker(port):
+def _worker(port):
     """Worker function to listen on a specific port."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(('localhost', port))
@@ -26,21 +28,27 @@ def worker(port):
 
 def detect_knock_sequence():
     """Detect the port knock sequence using multiprocessing."""
-    pool = multiprocessing.Pool()
-    for port in KNOCK_SEQUENCE:
-        pool.apply_async(worker, args=(port,))
 
-    # Check the knock sequences periodically
-    while True:
+    knock_sequence: list[int] = Config.vars[knock_sequences]
+    max_knock_attempts: int = Config.vars['max_knock_attempts']
+
+    pool = multiprocessing.Pool()
+    for port in knock_sequence:
+        pool.apply_async(_worker, args=(port,))
+
+    attempts = 0
+    while attempts < max_knock_attempts:
         for ip, sequence in knock_sequences.items():
-            if sequence == KNOCK_SEQUENCE:
+            if sequence == knock_sequence:
                 print(f"Knock sequence detected from IP address {ip}!")
                 # Reset the knock sequence for this IP address
                 knock_sequences[ip] = []
         time.sleep(1)  # Sleep to reduce CPU usage
+        attempts += 1
 
     pool.close()
     pool.join()
+
 
 if __name__ == "__main__":
     detect_knock_sequence()
