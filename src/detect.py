@@ -3,8 +3,10 @@
 import multiprocessing
 import socket
 import time
+import ast
+from src.get_config import get_config
 
-from main import Config
+config = get_config()
 
 # Define the port knock sequence
 # KNOCK_SEQUENCE = [7000, 8000, 9000]
@@ -28,16 +30,27 @@ def _worker(port):
 
 def detect_knock_sequence():
     """Detect the port knock sequence using multiprocessing."""
+    knock_sequence: list[int] = []
+    max_knock_attempts: int = 0
+    attempts: int = 0
 
-    knock_sequence: list[int] = Config.vars[knock_sequences]
-    max_knock_attempts: int = Config.vars['max_knock_attempts']
+    try:
+        knock_sequence = ast.literal_eval(config['Data']['knock_sequence'])
+    except ValueError:
+        print(f"Could not parse '{config['Data']['knock_sequence']}' as a Python literal.")
+
+    try:
+        max_knock_attempts = ast.literal_eval(config['Constants']['max_knock_attempts'])
+    except ValueError:
+        print(f"Could not parse '{config['Constants']['max_knock_attempts']}' as a Python literal.")
+
 
     pool = multiprocessing.Pool()
     for port in knock_sequence:
         pool.apply_async(_worker, args=(port,))
 
-    attempts = 0
     while attempts < max_knock_attempts:
+        print(f'attemps: {attempts}')
         for ip, sequence in knock_sequences.items():
             if sequence == knock_sequence:
                 print(f"Knock sequence detected from IP address {ip}!")
