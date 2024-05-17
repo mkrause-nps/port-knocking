@@ -14,10 +14,11 @@ config = get_config()
 # Dictionary to store knock sequences for each IP address
 knock_sequences = {}
 
+
 def _worker(port):
     """Worker function to listen on a specific port."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('localhost', port))
+        s.bind(("localhost", port))
         s.listen()
         while True:
             conn, addr = s.accept()
@@ -28,6 +29,7 @@ def _worker(port):
                     knock_sequences[addr[0]] = []
                 knock_sequences[addr[0]].append(port)
 
+
 def detect_knock_sequence():
     """Detect the port knock sequence using multiprocessing."""
     knock_sequence: list[int] = []
@@ -35,22 +37,25 @@ def detect_knock_sequence():
     attempts: int = 0
 
     try:
-        knock_sequence = ast.literal_eval(config['Data']['knock_sequence'])
+        knock_sequence = ast.literal_eval(config["Data"]["knock_sequence"])
     except ValueError:
-        print(f"Could not parse '{config['Data']['knock_sequence']}' as a Python literal.")
+        print(
+            f"Could not parse '{config['Data']['knock_sequence']}' as a Python literal."
+        )
 
     try:
-        max_knock_attempts = ast.literal_eval(config['Constants']['max_knock_attempts'])
+        max_knock_attempts = ast.literal_eval(config["Constants"]["max_knock_attempts"])
     except ValueError:
-        print(f"Could not parse '{config['Constants']['max_knock_attempts']}' as a Python literal.")
-
+        print(
+            f"Could not parse '{config['Constants']['max_knock_attempts']}' as a Python literal."
+        )
 
     pool = multiprocessing.Pool()
     for port in knock_sequence:
         pool.apply_async(_worker, args=(port,))
 
     while attempts < max_knock_attempts:
-        print(f'attemps: {attempts}')
+        print(f"attemps: {attempts}")
         for ip, sequence in knock_sequences.items():
             if sequence == knock_sequence:
                 print(f"Knock sequence detected from IP address {ip}!")
