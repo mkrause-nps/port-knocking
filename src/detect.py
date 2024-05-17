@@ -55,7 +55,7 @@ def detect_knock_sequence():
         pool.apply_async(_worker, args=(port,))
 
     while attempts < max_knock_attempts:
-        print(f"attemps: {attempts}")
+        print(f"attempts: {attempts}")
         for ip, sequence in knock_sequences.items():
             if sequence == knock_sequence:
                 print(f"Knock sequence detected from IP address {ip}!")
